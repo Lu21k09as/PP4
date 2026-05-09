@@ -42,7 +42,7 @@ In this exercise you will:
 1. From your local shell (WSL, macOS Terminal, or Linux), log into the `vorlesungsserver` (or any other remote machine of your choice, e.g. your own raspberry pi):
 
    ```bash
-   ssh -v youruser@remotehost
+    ssh -v Lu21k09as@vorlesung
    ```
 2. Carefully observe and note each step:
 
@@ -56,7 +56,23 @@ In this exercise you will:
 
 ```bash
 # 1) The exact ssh command you ran
+ ssh -v Lu21k09as@vorlesung
 # 2) A detailed, step-by-step explanation of what happened at each stage
+*    TCP-Verbindung wird zu Port 22 aufgebaut
+*   Verbindung ist erfolgreich (`Connection established`)
+*   Austausch der SSH-Protokollversionen
+*   Aushandlung von Algorithmen (Key Exchange, Host Key, Verschlüsselung)
+*   Server sendet seinen Host-Key zur Identifikation
+*   Versuch der Anmeldung mit Public-Key → nicht akzeptiert
+*   Anmeldung mit Passwort → erfolgreich
+*   SSH startet eine Session (Channel wird geöffnet)
+*   Remote-Shell wird gestartet (Login auf dem Server)
+*   Server ist sowohl über Hostname als auch über IP erreichbar
+*   Beide Verbindungen nutzen denselben Host-Key
+*   Host-Key wird in "known_hosts" gespeichert (Sicherheitsfunktion)
+
+
+
 ```
 
 ---
@@ -85,8 +101,15 @@ In this exercise you will:
 
 ```bash
 # 1) The ssh-keygen command you ran
+ ssh-keygen -t ed25519 -C "lukas.lazewski@gmx.de"
 # 2) The file paths of the generated keys
+-rw------- 1 Lu21k09as Lu21k09as  419 May  9 14:48 id_ed25519
+-rw-r--r-- 1 Lu21k09as Lu21k09as  106 May  9 14:48 id_ed25519.pub
+-rw------- 1 Lu21k09as Lu21k09as 1120 May  9 14:34 known_hosts
+-rw-r--r-- 1 Lu21k09as Lu21k09as  142 May  7 08:00 known_hosts.old
 # 3) Your written explanation (3–5 sentences) of the signature process
+Beim Signaturprozess in SSH wird die Identität des Clients mit einem Schlüsselpaar überprüft. Der Server sendet dabei eine Herausforderung, die der Client mit seinem privaten Schlüssel signiert. Diese Signatur wird zurückgesendet und vom Server mithilfe des öffentlichen Schlüssels überprüft. Ist sie gültig, wird die Authentifizierung akzeptiert. Der private Schlüssel bleibt dabei stets geheim und wird nie über das Netzwerk übertragen.
+
 ```
 
 ---
@@ -118,15 +141,43 @@ In this exercise you will:
    ```
 4. Explain:
 
-   * How SSH reads `~/.ssh/config` and matches hosts.
-   * The difference between `HostName` and `Host`.
-   * How aliases prevent long commands.
+How SSH reads `~/.ssh/config`:
+
+*   SSH liest die Datei von oben nach unten
+*   Sucht nach einem passenden `Host`-Eintrag
+*   Vergleicht den eingegebenen Namen mit den `Host`-Namen
+*   Verwendet den ersten Treffer
+*   Wendet die zugehörigen Einstellungen an
+
+
+Difference between `Host` and `HostName`
+
+*   `Host`: Alias, den du im Befehl eingibst
+*   `HostName`: echte Adresse (IP oder DNS) des Servers
+
+How SSH reads ~/.ssh/config and matches hosts.
+ssh Lu21k09as@128.140.85.215
+einfach:
+ssh my-remote
 
 **Provide:**
 
 ```text
 # 1) The full contents of your ~/.ssh/config
+Host my-remote
+       HostName 128.140.85.215
+       User Lu21k09as
+       IdentityFile ~/.ssh/id_ed25519
+
+   Host backup-server
+       HostName 128.140.85.215
+       User Lu21k09as
+       Port 2222
+       IdentityFile ~/.ssh/id_ed25519_backup
+
 # 2) A short explanation (3–4 sentences) of how the config simplifies connections
+Das SSH-Config-File vereinfacht Verbindungen, indem wiederkehrende Einstellungen zentral gespeichert werden. Dadurch müssen Benutzer nicht jedes Mal Benutzername, IP-Adresse oder Port angeben. Stattdessen kann ein kurzer Alias verwendet werden, der alle notwendigen Optionen enthält. Das spart Zeit und reduziert Fehler bei der Eingabe.
+
 ```
 
 ---
@@ -163,8 +214,16 @@ In this exercise you will:
 
 ```bash
 # 1) Each scp command you ran
+scp notes.txt Lu21k09as@128.140.85.215:~/uploads/
+scp Lu21k09as@128.140.85.215:~/server.log ./downloads/
+scp -r Lu21k09as@128.140.85.215:~/project Lu21k09as@128.140.85.215:~/backup_project
+
 # 2) Any flags or options used
-# 3) A brief explanation (2–3 sentences) of scp’s mechanism
+-r   # rekursiv für Verzeichnisse
+
+# 3) Brief explanation
+scp nutzt SSH, um eine sichere Verbindung aufzubauen und Dateien zu übertragen. Die Daten werden dabei verschlüsselt, sodass sie während der Übertragung geschützt sind. Für jeden Transfer wird automatisch eine neue SSH-Session gestartet.
+
 ```
 
 ---
@@ -201,9 +260,21 @@ In this exercise you will:
 3. Log out and log back in to trigger the script.
 4. Explain:
 
-   * The difference between `~/.bashrc` and `~/.profile` (interactive vs. login shells).
-   * Why and when each file is read.
-   * How sourcing differs from executing.
+   * The difference between `~/.bashrc` and `~/.profile` (interactive vs. login shells):
+     * ~/.bashrc wird bei jeder interaktiven Shell geladen (z. B. wenn man ein Terminal öffnet oder eine neue Shell startet)
+     * ~/.profile wird nur bei einer Login-Shell geladen (z. B. beim Einloggen per SSH oder beim Systemstart)
+
+   * Why and when each file is read:
+     * ~/.bashrc wird gelesen, wenn eine neue interaktive Shell startet (z. B. neues Terminal oder bash)
+     * ~/.profile wird gelesen, wenn sich der Benutzer anmeldet (Login-Shell, z. B. per SSH)
+     * .profile wird also einmal pro Login ausgeführt, .bashrc bei jeder neuen Shell
+
+    * How sourcing differs from executing:
+      * Beim Sourcen (`source datei` oder `. datei`) wird das Skript in der aktuellen Shell ausgeführt
+      * Alle Änderungen (z. B. Variablen, Pfade) bleiben in der aktuellen Umgebung erhalten
+      * Beim Ausführen (`./datei`) wird das Skript in einer neuen Subshell gestartet
+      * Änderungen wirken nur in dieser Subshell und gehen danach verloren
+
 
 **Provide:**
 
