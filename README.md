@@ -280,8 +280,13 @@ scp nutzt SSH, um eine sichere Verbindung aufzubauen und Dateien zu übertragen.
 
 ```bash
 # 1) The contents of login_tasks.sh
+
+Welcome Lu21k09as! Today is Sat May  9 03:32:01 PM UTC 2026.
+
 # 2) The lines you added to ~/.bashrc or ~/.profile
+source ~/login_tasks.sh
 # 3) Your explanation (3–5 sentences) of shell init files and sourcing vs. executing
+Die Datei ~/.bashrc wird bei jeder interaktiven Shell ausgeführt, während ~/.profile nur bei einer Login-Shell beim Einloggen geladen wird. Deshalb nutzt man ~/.bashrc für Befehle, die in jeder Shell verfügbar sein sollen. Beim Sourcen wird ein Skript direkt in der aktuellen Shell ausgeführt, sodass Änderungen erhalten bleiben. Beim normalen Ausführen wird eine neue Subshell gestartet, wodurch Änderungen nach dem Beenden verloren gehen.
 ```
 
 ---
